@@ -5,10 +5,23 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/keybrl/chatgpt-cli/pkg/openai"
+)
+
+const (
+	defaultModel           = "gpt-3.5-turbo"
+	defaultTimeoutPerRound = 30 * time.Second
 )
 
 // Options 对话配置
-type Options struct{}
+type Options struct {
+	// 对话使用的模型
+	Model string
+	// 每回合超时时间
+	TimeoutPerRound time.Duration
+}
 
 // Chat 对话
 type Chat interface {
@@ -17,9 +30,25 @@ type Chat interface {
 }
 
 // NewChat 创建一个 Chat
-func NewChat(opts Options) (Chat, error) {
+func NewChat(config *openai.Config, opts Options) (Chat, error) {
+	// 创建客户端
+	client, err := openai.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("new openai client error: %w", err)
+	}
+
+	// 设置默认值
+	if opts.Model == "" {
+		opts.Model = defaultModel
+	}
+	if opts.TimeoutPerRound == 0 {
+		opts.TimeoutPerRound = defaultTimeoutPerRound
+	}
+
 	return &consoleChat{
-		opts: opts,
+		opts:   opts,
+		input:  bufio.NewReader(os.Stdin),
+		client: client,
 	}, nil
 }
 
@@ -30,7 +59,9 @@ type consoleChat struct {
 
 	opts Options
 
-	input *bufio.Reader
+	client   openai.Client
+	input    *bufio.Reader
+	messages []openai.ChatMessage
 }
 
 var _ Chat = &consoleChat{}
@@ -41,8 +72,6 @@ func (chat *consoleChat) Start(ctx context.Context) error {
 	chat.ctx, chat.cancel = context.WithCancel(ctx)
 	defer chat.cancel()
 
-	chat.input = bufio.NewReader(os.Stdin)
-
 	for {
 		// 检查上下文
 		select {
@@ -51,20 +80,22 @@ func (chat *consoleChat) Start(ctx context.Context) error {
 		default:
 		}
 
-		var msg *Message
+		var msg *openai.ChatMessage
 		var err error
 
 		// 接收下游输入
 		if msg, err = chat.recvFromDownstream(); err != nil {
 			return fmt.Errorf("get input from console error: %w", err)
 		}
-		if msg.String() == "" {
+		if msg == nil || msg.Content == "" {
 			continue
 		}
 
 		// 转发给上游，并接收上游输出
 		if msg, err = chat.forwardToUpstream(msg); err != nil {
-			return fmt.Errorf("forward message to upstream error: %w", err)
+			msg = &openai.ChatMessage{
+				Content: fmt.Sprintf("ERROR: %s", err.Error()),
+			}
 		}
 
 		// 转发给下游
