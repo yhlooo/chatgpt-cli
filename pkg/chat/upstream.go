@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+    "time"
 
-	"github.com/keybrl/chatgpt-cli/pkg/openai"
+    "github.com/keybrl/chatgpt-cli/pkg/openai"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,6 +15,11 @@ func (chat *consoleChat) forwardToUpstream(msg *openai.ChatMessage) (*openai.Cha
 	if msg == nil {
 		return nil, nil
 	}
+	if chat.opts.Model == "fake" {
+		// 测试模式
+		return msg, nil
+	}
+
 	// 准备输入
 	msgs := append(chat.messages, *msg)
 	input := &openai.CreateChatCompletionInput{
@@ -26,6 +32,8 @@ func (chat *consoleChat) forwardToUpstream(msg *openai.ChatMessage) (*openai.Cha
 	// 设置上下文超时
 	ctx, cancel := context.WithTimeout(chat.ctx, chat.opts.TimeoutPerRound)
 	defer cancel()
+
+	go chat.printDecorationAfter(ctx, 2 * time.Second, "(ChatGPT is thinking ...)\n")
 
 	// 请求 OpenAI
 	output, err := chat.client.CreateChatCompletion(ctx, input)
@@ -45,6 +53,8 @@ func (chat *consoleChat) forwardToUpstream(msg *openai.ChatMessage) (*openai.Cha
 
 	return &respMsg, nil
 }
+
+
 
 // mustJSONMarshal 序列化 obj 为 JSON ，忽略错误
 func mustJSONMarshal(obj interface{}) []byte {

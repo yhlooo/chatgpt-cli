@@ -2,7 +2,9 @@ package chat
 
 import (
 	"fmt"
-	"time"
+    "github.com/mattn/go-isatty"
+    "os"
+    "time"
 
 	"github.com/spf13/cobra"
 
@@ -23,6 +25,8 @@ var Cmd = &cobra.Command{
 	Use:   "chat",
 	Short: "Start a chart",
 	RunE: func(cmd *cobra.Command, _ []string) error {
+		istty := isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
+
 		c, err := chat.NewChat(&openai.Config{
 			Server:         flagServer,
 			SecretKey:      flagSecretKey,
@@ -31,6 +35,8 @@ var Cmd = &cobra.Command{
 		}, chat.Options{
 			Model:           flagModel,
 			TimeoutPerRound: flagTimeoutPerRound,
+			OutputDecoration: istty,
+			OutputColor: istty,
 		})
 		if err != nil {
 			return fmt.Errorf("create chat error: %w", err)

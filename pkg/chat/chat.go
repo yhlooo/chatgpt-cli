@@ -21,6 +21,10 @@ type Options struct {
 	Model string
 	// 每回合超时时间
 	TimeoutPerRound time.Duration
+	// 是否使用彩色输出
+	OutputColor bool
+	// 输出是否含修饰符
+	OutputDecoration bool
 }
 
 // Chat 对话
@@ -94,6 +98,7 @@ func (chat *consoleChat) Start(ctx context.Context) error {
 		// 转发给上游，并接收上游输出
 		if msg, err = chat.forwardToUpstream(msg); err != nil {
 			msg = &openai.ChatMessage{
+				Role: openai.SystemChatMessageRole,
 				Content: fmt.Sprintf("ERROR: %s", err.Error()),
 			}
 		}

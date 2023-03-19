@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-// 执行命令
+// Execute 执行命令
 func Execute() {
 	ctx := notifyContext(context.Background())
 
