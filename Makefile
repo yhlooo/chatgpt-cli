@@ -7,12 +7,12 @@ build:
 
 .PHONY: build-all
 build-all:
-	GOOS=linux GOARCH=amd64 go build -o bin/linux/amd64/chatgpt-cli $(GO_MODULE)
-	GOOS=linux GOARCH=arm64 go build -o bin/linux/arm64/chatgpt-cli $(GO_MODULE)
-	GOOS=darwin GOARCH=amd64 go build -o bin/darwin/amd64/chatgpt-cli $(GO_MODULE)
-	GOOS=darwin GOARCH=arm64 go build -o bin/darwin/arm64/chatgpt-cli $(GO_MODULE)
-	GOOS=windows GOARCH=amd64 go build -o bin/windows/amd64/chatgpt-cli $(GO_MODULE)
-	GOOS=windows GOARCH=arm64 go build -o bin/windows/arm64/chatgpt-cli $(GO_MODULE)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/linux/amd64/chatgpt-cli $(GO_MODULE)
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o bin/linux/arm64/chatgpt-cli $(GO_MODULE)
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o bin/darwin/amd64/chatgpt-cli $(GO_MODULE)
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o bin/darwin/arm64/chatgpt-cli $(GO_MODULE)
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o bin/windows/amd64/chatgpt-cli $(GO_MODULE)
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -o bin/windows/arm64/chatgpt-cli $(GO_MODULE)
 
 .PHONY: release
 release: build-all
