@@ -75,6 +75,9 @@ func (chat *consoleChat) Start(ctx context.Context) error {
 	// 设置上下文
 	chat.ctx, chat.cancel = context.WithCancel(ctx)
 	defer chat.cancel()
+	chat.printDecoration("Type anything to start chatting (e.g. \"knock knock, may i come in?\")\n")
+	chat.printDecoration("(submit with double `Enter`)\n")
+	chat.printDecoration("type `.quit` to exit, and `.help` for more info.\n\n")
 
 	for {
 		// 检查上下文
@@ -92,6 +95,13 @@ func (chat *consoleChat) Start(ctx context.Context) error {
 			return fmt.Errorf("get input from console error: %w", err)
 		}
 		if msg == nil || msg.Content == "" {
+			continue
+		}
+
+		// 处理控制字符
+		if ok, err := chat.handleControlMessage(msg); err != nil {
+			return fmt.Errorf("handle control message error: %w", err)
+		} else if ok {
 			continue
 		}
 

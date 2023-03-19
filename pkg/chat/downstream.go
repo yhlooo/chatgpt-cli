@@ -16,7 +16,6 @@ func (chat *consoleChat) recvFromDownstream() (*openai.ChatMessage, error) {
 	var content string
 
 	chat.printDecoration("You: \n> ")
-recvLoop:
 	for {
 		line, err := chat.input.ReadString('\n')
 		if err != nil {
@@ -26,14 +25,14 @@ recvLoop:
 			return nil, fmt.Errorf("read from stdin error: %w", err)
 		}
 
-		switch line {
-		case "\n":
-			break recvLoop
-		case "exit\n", "quit\n":
-			chat.cancel()
-			return nil, nil
+		if line == "\n" {
+			break
 		}
 		content += line
+		if content[0] == '.' {
+			break
+		}
+
 		chat.printDecoration("> ")
 	}
 
